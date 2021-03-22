@@ -1,3 +1,7 @@
+### Fork Note
+This is a modifed version of the original script taken from: https://github.com/its-sarin/BrailleCodec.
+The change is that it's adjusted to work with Croatian Braille instead of English.
+
 # BrailleCodec
 A small python script to encode plain text to Braille or decode Braille to plain text
 

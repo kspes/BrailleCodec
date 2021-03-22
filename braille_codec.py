@@ -1,55 +1,155 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 from __future__ import unicode_literals
-import optparse
+import sys
 
-alphabraille = ['⠁', '⠃', '⠉', '⠙', '⠑', '⠋', '⠛', '⠓', '⠊', '⠚', '⠅', '⠇',
- '⠍', '⠝', '⠕', '⠏', '⠟', '⠗', '⠎', '⠞', '⠥', '⠧', '⠺', '⠭', '⠽', '⠵']
-numbraille = ['⠼⠁', '⠼⠃', '⠼⠉', '⠼⠙', '⠼⠑', '⠼⠋', '⠼⠛', '⠼⠓', '⠼⠊', '⠼⠚']
-alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
- 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
-nums = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']
+# Braille unicode symbols taken from original script and https://www.piliapp.com/symbol/braille/
+# Croatian braille: https://hr.wikipedia.org/wiki/Brailleevo_pismo
+# Code first translates joint Croatian characters such as 'lj', 'nj', and 'dz', then converts to braille by the 
+# 't' table below.
 
-enc = None
-dec = None
+t = {
+    'a': '⠁',
+    'b': '⠃',
+    'c': '⠉',
+    'č': '⠡',
+    'ć': '⠩',
+    'd': '⠙',
+    'ǆ': '⠻',
+    'đ': '⠹',
+    'e': '⠑',
+    'f': '⠋',
+    'g': '⠛',
+    'h': '⠓',
+    'i': '⠊',
+    'j': '⠚',
+    'k': '⠅',
+    'l': '⠇',
+    'ǉ': '⠣',
+    'm': '⠍',
+    'n': '⠝',
+    'ǌ': '⠫',
+    'o': '⠕',
+    'p': '⠏',
+    'q': '⠟',
+    'r': '⠗',
+    's': '⠎',
+    'š': '⠱',
+    't': '⠞',
+    'u': '⠥',
+    'v': '⠧',
+    'w': '⠺',
+    'x': '⠭',
+    'y': '⠽',
+    'z': '⠵',
+    'ž': '⠮',
 
-# Command line options
-usage = "usage: %prog -arg"
-parser = optparse.OptionParser(usage=usage)
+    'A': '⠠⠁',
+    'B': '⠠⠃',
+    'C': '⠠⠉',
+    'Č': '⠠⠡',
+    'Ć': '⠠⠩',
+    'D': '⠠⠙',
+    'Ǆ': '⠠⠻',
+    'Đ': '⠠⠹',
+    'E': '⠠⠑',
+    'F': '⠠⠋',
+    'G': '⠠⠛',
+    'H': '⠠⠓',
+    'I': '⠠⠊',
+    'J': '⠠⠚',
+    'K': '⠠⠅',
+    'L': '⠠⠇',
+    'Ǉ': '⠠⠣',
+    'M': '⠠⠍',
+    'N': '⠠⠝',
+    'Ǌ': '⠠⠫',
+    'O': '⠠⠕',
+    'P': '⠠⠏',
+    'Q': '⠠⠟',
+    'R': '⠠⠗',
+    'S': '⠠⠎',
+    'Š': '⠠⠱',
+    'T': '⠠⠞',
+    'U': '⠠⠥',
+    'V': '⠠⠧',
+    'W': '⠠⠺',
+    'X': '⠠⠭',
+    'Y': '⠠⠽',
+    'Z': '⠠⠵',
+    'Ž': '⠠⠮',
 
-parser.add_option('-e', dest="enc", type="string", help="enc plain text to Braille")
-parser.add_option('-d', dest="dec", type="string", help="dec Braille into plain text")
+    '1': '⠼⠁',
+    '2': '⠼⠃',
+    '3': '⠼⠉',
+    '4': '⠼⠙',
+    '5': '⠼⠑',
+    '6': '⠼⠋',
+    '7': '⠼⠛',
+    '8': '⠼⠓',
+    '9': '⠼⠊',
+    '0': '⠼⠚',
 
-# Parse arguments
-(options, args) = parser.parse_args()
-if not options:
-    parser.error("incorrect number of arguments")
+    '.': '⠲',
+    ',': '⠂',
+    '!': '⠖',
+    '(': '⠶',
+    ')': '⠶',
+    '-': '⠤',
+    ' ': ' ',
+    '\n': '\n',
+    '\r': '\r',
+}
 
-if options.enc:
-    enc = options.enc
-if options.dec:
-    dec = options.dec.decode('utf8', 'ignore')
+concatTable = {
+    'Lj': 'Ǉ',
+    'LJ': 'Ǉ',
+    'lJ': 'ǉ',
+    'lj': 'ǉ',
+    'Nj': 'Ǌ',
+    'NJ': 'Ǌ',
+    'nJ': 'ǌ',
+    'nj': 'ǌ',
+    'Dž': 'Ǆ',
+    'DŽ': 'Ǆ',
+    'dŽ': 'ǆ',
+    'dž': 'ǆ',
+}
 
-def main():
-    s = ""
-    if enc:
-        for n in enc:
-            if n in alphabet:
-                s += alphabraille[alphabet.index(n)]
-            elif n in nums:
-                s += numbraille[nums.index(n)]
+if len(sys.argv) < 2:
+    print("usage: braille_codec.py <Text to translate>")
+    sys.exit(2)
 
-        print(s)
-        return
+inputText = u' '.join([i.decode('utf-8') for i in sys.argv[1:]])
+text = ''
 
-    if dec:
-        for n in dec:
-            if n in alphabraille:
-                s += alphabet[alphabraille.index(n)]
+# First, concat joint characters
+inputLen = len(inputText)
+i = 0
+while i < inputLen - 1:
+    c = inputText[i]
+    c2 = c + inputText[i + 1]
+    try:
+        match = concatTable[c2]
+        text += match
+        i += 2
+    except KeyError:
+        text += c
+        i += 1 
 
-        print(s)
-        return
+#print(text)
 
-if __name__ == "__main__":
-    main()
+# Next, convert to braille
+
+braille = ''
+
+i = 0
+for c in text:
+    try:
+        braille += t[c]
+    except KeyError:
+        print("ERROR: Character '%s' not supported by Croatian braille" % c)
+        sys.exit(1)
+    i += 1
+
+print(braille)
