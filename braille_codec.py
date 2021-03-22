@@ -126,9 +126,11 @@ text = ''
 # First, concat joint characters
 inputLen = len(inputText)
 i = 0
-while i < inputLen - 1:
+while i < inputLen:
     c = inputText[i]
-    c2 = c + inputText[i + 1]
+    c2 = ''
+    if i < inputLen - 1:
+        c2 = c + inputText[i + 1]
     try:
         match = concatTable[c2]
         text += match
@@ -136,8 +138,6 @@ while i < inputLen - 1:
     except KeyError:
         text += c
         i += 1 
-
-#print(text)
 
 # Next, convert to braille
 
